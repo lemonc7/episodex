@@ -139,6 +139,14 @@ func TestExtractEpisodeInfo(t *testing.T) {
 			},
 		},
 		{
+			in: "黑袍纠察队 第二季 1-2-3-4 集 The Boys Season 2 2020.English.HD1080P.x264.DD5.1.中英双字幕.ENG.CHS.taobaobt",
+			wantInfo: EpisodeInfo{
+				Season: new(2),
+				Start:  episodePtr("1", 1, 0),
+				End:    episodePtr("4", 4, 0),
+			},
+		},
+		{
 			in: "全职猎人2011[全62集][中文字幕].Hunter.x.Hunter.S01.2011.1080p.KKTV.WEB-DL.H264.AAC-ColorTV",
 			wantInfo: EpisodeInfo{
 				Season:   new(1),

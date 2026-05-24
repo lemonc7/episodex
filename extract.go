@@ -75,6 +75,8 @@ var (
 	seasonEpisodeRe = regexp.MustCompile(`(?i)\bS\s*(\d{1,3})\s*[-_. ]*E\s*(\d{1,4}(?:\.5)?)\b`)
 
 	episodeRangeRe       = regexp.MustCompile(`(?i)(?:^|[^\d])(\d{1,4}(?:\.5)?)\s*(?:-|~|–|—|－|至|到)\s*(\d{1,4}(?:\.5)?)(?:\s*(?:fin|end))?(?:[^\d]|$)`)
+	episodeListRe        = regexp.MustCompile(`(?:^|[^\d])((?:\d{1,4}(?:\.5)?\s*(?:-|~|–|—|－)\s*){2,}\d{1,4}(?:\.5)?)\s*[集话話](?:[^\d]|$)`)
+	episodeListNumberRe  = regexp.MustCompile(`\d{1,4}(?:\.5)?`)
 	fullCountRe          = regexp.MustCompile(`全\s*(\d{1,4}|[零〇一二三四五六七八九十两百]{1,5})\s*[集话話]`)
 	completeSeasonMarkRe = regexp.MustCompile(`(?i)全集|全季|完结|完結|fin|end`)
 )
@@ -103,6 +105,13 @@ func ExtractEpisodeInfo(name string) EpisodeInfo {
 	}
 
 	info := EpisodeInfo{Season: parseIntPtr(extractSeason(name))}
+
+	if start, end := extractEpisodeListRange(name); start != "" || end != "" {
+		info.Start = parseEpisodeNumberPtr(start)
+		info.End = parseEpisodeNumberPtr(end)
+		info.Complete = hasCompleteSeasonMark(name)
+		return info
+	}
 
 	if start, end := extractEpisodeRange(name); start != "" || end != "" {
 		info.Start = parseEpisodeNumberPtr(start)
@@ -213,6 +222,25 @@ func extractEpisodeRange(stem string) (string, string) {
 		}
 	}
 	return "", ""
+}
+
+func extractEpisodeListRange(stem string) (string, string) {
+	m := episodeListRe.FindStringSubmatch(stem)
+	if len(m) < 2 {
+		return "", ""
+	}
+	numbers := episodeListNumberRe.FindAllString(m[1], -1)
+	if len(numbers) < 2 {
+		return "", ""
+	}
+	start, end := numbers[0], numbers[len(numbers)-1]
+	if isLikelyYear(start) || isLikelyYear(end) {
+		return "", ""
+	}
+	if !lessOrEqualEpisodeIndex(start, end) {
+		return "", ""
+	}
+	return start, end
 }
 
 func extractFullCount(stem string) string {
